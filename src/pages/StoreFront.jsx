@@ -810,32 +810,58 @@ export default function StoreFront() {
   };
   const removeFromCart = id => setCart(p => p.filter(c => c.id !== id));
   const total          = cart.reduce((s, c) => s + (c.price || 0), 0);
+const orderOnWhatsApp = async () => {
+  if (!cart.length) return;
 
-  const orderOnWhatsApp = async () => {
-    if (!cart.length) return;
-    setOrdering(true);
-    try {
-      await addDoc(collection(db, "orders"), {
-        id:        `ORD-${String(Date.now()).slice(-6)}`,
-        items:     cart.map(c => `${c.name} — KSh ${c.price?.toLocaleString()}`),
-        total,
-        status:    "Pending",
-        date:      new Date().toLocaleDateString("en-KE", { day: "numeric", month: "short" }),
-        createdAt: serverTimestamp(),
-      });
-    } catch (e) {
-      console.error("order save failed:", e);
-    } finally {
-      setOrdering(false);
-    }
+  setOrdering(true);
 
-    const items = cart.map((c, i) => `${i + 1}. ${c.name} — KSh ${c.price?.toLocaleString()}`).join("%0A");
-    const msg =
-      `*CAPSTORE.KE — NEW ORDER* 🧢%0A━━━━━━━━━━━━━━━━━━%0A${items}%0A━━━━━━━━━━━━━━━━━━%0A` +
-      `*Total: KSh ${total.toLocaleString()}*%0A%0A` +
-      `Hi! I'd like to order the above. Please confirm availability, payment & delivery. Thank you!`;
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
-  };
+  try {
+    await addDoc(collection(db, "orders"), {
+      id: `ORD-${String(Date.now()).slice(-6)}`,
+      items: cart.map(
+        c => `${c.name} — KSh ${c.price?.toLocaleString()}`
+      ),
+      total,
+      status: "Pending",
+      date: new Date().toLocaleDateString("en-KE", {
+        day: "numeric",
+        month: "short",
+      }),
+      createdAt: serverTimestamp(),
+    });
+  } catch (e) {
+    console.error("order save failed:", e);
+  } finally {
+    setOrdering(false);
+  }
+
+  const items = cart
+    .map(
+      (c, i) =>
+        `${i + 1}. ${c.name} - KSh ${c.price?.toLocaleString()}`
+    )
+    .join("\n");
+
+  const message = `
+CAPSTORE.KE — NEW ORDER
+
+${items}
+
+Total: KSh ${total.toLocaleString()}
+
+Hi! I'd like to order the above items.
+Please confirm availability, payment and delivery.
+  `;
+
+  const encodedMessage = encodeURIComponent(message);
+
+  // ✅ Better mobile compatibility
+  const whatsappURL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
+
+  // ✅ Works better on phones than window.open
+  window.location.href = whatsappURL;
+};
+  
 
   return (
     <div className="cs-page">
