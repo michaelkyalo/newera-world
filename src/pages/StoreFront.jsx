@@ -5,6 +5,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 
+// ✅ Your WhatsApp number
 const WHATSAPP_NUMBER = "254796248712";
 
 const GLOBAL_CSS = `
@@ -63,6 +64,7 @@ const GLOBAL_CSS = `
     60%{transform:translate(2%,3%)} 70%{transform:translate(-4%,-1%)} 80%{transform:translate(1%,-4%)} 90%{transform:translate(3%,2%)}
   }
 
+  /* ─── NAV ─── */
   .cs-nav {
     position: sticky; top: 0; z-index: 500;
     height: 64px;
@@ -74,7 +76,7 @@ const GLOBAL_CSS = `
     padding: 0 44px;
   }
   .cs-nav-left { display: flex; align-items: center; gap: 12px; }
-  .cs-logo { display: flex; flex-direction: column; gap: 1px; }
+  .cs-logo { display: flex; flex-direction: column; gap: 1px; cursor: pointer; }
   .cs-logo-name {
     font-family: var(--display);
     font-size: 22px; letter-spacing: 3px; line-height: 1;
@@ -130,6 +132,31 @@ const GLOBAL_CSS = `
     display: flex; align-items: center; justify-content: center;
   }
 
+  /* ─── DELIVERY BAR ─── */
+  .cs-delivery-bar {
+    background: var(--teal-dim);
+    border-bottom: 1px solid var(--border-hot);
+    padding: 11px 44px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    font-size: 10px; font-weight: 600; letter-spacing: 2.5px;
+    text-transform: uppercase; color: var(--teal);
+    position: relative; overflow: hidden;
+  }
+  .cs-delivery-bar::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(0,200,180,0.08), transparent);
+    animation: shimmer 3.5s ease-in-out infinite;
+  }
+  @keyframes shimmer { 0%,100%{transform:translateX(-100%)} 60%{transform:translateX(100%)} }
+  .cs-delivery-pill {
+    background: var(--teal); color: #08090c;
+    font-size: 8px; font-weight: 800; letter-spacing: 1.5px;
+    padding: 3px 10px; border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  /* ─── HERO ─── */
   .cs-hero {
     padding: 28px 44px 24px;
     border-bottom: 1px solid var(--border);
@@ -179,6 +206,7 @@ const GLOBAL_CSS = `
     text-transform: uppercase; color: var(--white-30); margin-top: 2px;
   }
 
+  /* ─── FILTER ─── */
   .cs-filter-wrap {
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 44px;
@@ -202,54 +230,54 @@ const GLOBAL_CSS = `
     text-transform: uppercase; color: var(--white-30);
   }
 
+  /* ─── GRID ─── */
+  .cs-grid-wrap { padding: 28px 44px; }
   .cs-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
-    gap: 1px;
-    background: var(--border);
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 18px;
   }
 
+  /* ─── CARD ─── */
   @property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
   @keyframes rotateBorder { to { --angle: 360deg; } }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
   }
 
   .cs-card {
     background: var(--surface);
+    border-radius: 12px;
+    border: 1px solid var(--border);
     display: flex; flex-direction: column;
-    position: relative;
-    animation: fadeUp .45s ease both;
-    transition: background .25s;
+    position: relative; overflow: hidden;
+    cursor: pointer;
+    animation: fadeIn .4s ease both;
+    transition: border-color .25s, background .25s, transform .22s, box-shadow .22s;
   }
   .cs-card:nth-child(1){animation-delay:.04s} .cs-card:nth-child(2){animation-delay:.08s}
   .cs-card:nth-child(3){animation-delay:.12s} .cs-card:nth-child(4){animation-delay:.16s}
-  .cs-card:nth-child(5){animation-delay:.2s}  .cs-card:nth-child(6){animation-delay:.24s}
+  .cs-card:nth-child(5){animation-delay:.20s} .cs-card:nth-child(6){animation-delay:.24s}
   .cs-card:nth-child(7){animation-delay:.28s} .cs-card:nth-child(8){animation-delay:.32s}
 
-  .cs-card::after {
-    content: '';
-    position: absolute; inset: 0;
-    background: conic-gradient(from var(--angle), transparent 55%, var(--teal) 70%, rgba(0,255,230,0.9) 78%, var(--teal) 85%, transparent 100%);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor; mask-composite: exclude;
-    padding: 1px;
-    opacity: 0; transition: opacity .3s;
-    pointer-events: none; z-index: 10;
+  .cs-card:hover {
+    background: var(--surface2);
+    border-color: var(--border-hot);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,200,180,0.12);
   }
-  .cs-card:hover { background: var(--surface2); }
-  .cs-card:hover::after { opacity: 1; animation: rotateBorder 2.2s linear infinite; }
 
   .cs-slider {
     position: relative; width: 100%; aspect-ratio: 1/1;
     background: #09090c; overflow: hidden;
+    border-radius: 12px 12px 0 0;
   }
   .cs-slider-img {
     width: 100%; height: 100%; object-fit: cover; display: block;
     transition: transform .65s cubic-bezier(.25,.1,.25,1);
   }
-  .cs-card:hover .cs-slider-img { transform: scale(1.05); }
+  .cs-card:hover .cs-slider-img { transform: scale(1.06); }
   .cs-slider-ph {
     width: 100%; height: 100%;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -257,79 +285,54 @@ const GLOBAL_CSS = `
     font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
   }
 
-  .cs-arrow {
-    position: absolute; top: 50%; transform: translateY(-50%);
-    width: 34px; height: 34px;
-    background: rgba(13,15,20,0.88);
-    border: 1px solid var(--border-hot);
-    border-radius: 50%; color: var(--teal);
-    font-size: 18px; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; z-index: 5; user-select: none;
-    opacity: 0; transition: all .2s; backdrop-filter: blur(4px);
-  }
-  .cs-slider:hover .cs-arrow { opacity: 1; }
-  .cs-arrow:hover { background: var(--teal); color: #08090c; transform: translateY(-50%) scale(1.08); }
-  .cs-arrow.left { left: 12px; } .cs-arrow.right { right: 12px; }
-
   .cs-view-tag {
-    position: absolute; top: 12px; left: 12px; z-index: 5;
+    position: absolute; top: 10px; left: 10px; z-index: 5;
     font-size: 7px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
     color: var(--teal);
     background: rgba(13,15,20,0.88);
     border: 1px solid rgba(0,200,180,0.3); border-radius: 6px;
-    padding: 3px 10px; backdrop-filter: blur(6px);
+    padding: 3px 8px; backdrop-filter: blur(6px);
   }
-  .cs-dots {
-    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
-    display: flex; gap: 5px; z-index: 5;
-  }
-  .cs-dot { height: 2px; border-radius: 1px; background: rgba(255,255,255,0.2); transition: all .22s; }
-  .cs-dot.active { width: 20px; background: var(--teal); }
-  .cs-dot:not(.active) { width: 5px; }
 
-  .cs-card-body { padding: 18px 20px 22px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
-  .cs-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .cs-card-body { padding: 14px 14px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
   .cs-card-name {
     font-family: var(--display);
-    font-size: 22px; letter-spacing: 2px; color: var(--white); line-height: 1;
+    font-size: 18px; letter-spacing: 1.5px; color: var(--white); line-height: 1;
   }
   .cs-type-badge {
     font-size: 7px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
-    padding: 3px 9px; border-radius: 6px;
+    padding: 2px 8px; border-radius: 6px;
     border: 1px solid rgba(0,200,180,0.25);
     color: var(--teal); background: var(--teal-dim);
-    flex-shrink: 0; white-space: nowrap; margin-top: 3px;
+    white-space: nowrap; align-self: flex-start;
   }
   .cs-price-row {
     display: flex; align-items: baseline; justify-content: space-between;
-    border-top: 1px solid var(--border); padding-top: 13px;
+    border-top: 1px solid var(--border); padding-top: 10px;
   }
   .cs-price {
     font-family: var(--display);
-    font-size: 30px; letter-spacing: 1px; color: var(--teal); line-height: 1;
+    font-size: 24px; letter-spacing: 1px; color: var(--teal); line-height: 1;
   }
   .cs-price-currency {
-    font-family: var(--body); font-size: 10px; font-weight: 500;
-    color: var(--white-30); margin-right: 4px; letter-spacing: 1px;
+    font-family: var(--body); font-size: 9px; font-weight: 500;
+    color: var(--white-30); margin-right: 3px; letter-spacing: 1px;
   }
   .cs-stock {
-    font-size: 8px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    font-size: 7px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
     color: rgba(0,200,180,0.6);
     border: 1px solid rgba(0,200,180,0.2); border-radius: 6px;
-    padding: 3px 9px; background: var(--teal-dim);
+    padding: 2px 7px; background: var(--teal-dim);
   }
-  .cs-stock.low {
-    color: var(--red);
-    border-color: rgba(255,112,112,0.3); background: rgba(255,112,112,0.08);
-  }
+  .cs-stock.low { color: var(--red); border-color: rgba(255,112,112,0.3); background: rgba(255,112,112,0.08); }
 
   .cs-add-btn {
     width: 100%; background: transparent;
     border: 1px solid rgba(0,200,180,0.3); border-radius: 8px;
     color: var(--teal);
-    font-size: 10px; font-weight: 700; font-family: var(--body);
-    letter-spacing: 2.5px; text-transform: uppercase;
-    padding: 14px; cursor: pointer; transition: all .25s;
+    font-size: 9px; font-weight: 700; font-family: var(--body);
+    letter-spacing: 2px; text-transform: uppercase;
+    padding: 11px; cursor: pointer; transition: all .25s;
     position: relative; overflow: hidden;
   }
   .cs-add-btn::before {
@@ -346,6 +349,7 @@ const GLOBAL_CSS = `
   .cs-add-btn.incart span { color: #08090c; }
   .cs-add-btn.incart::before { transform: translateY(0); }
 
+  /* ─── LOADING / EMPTY ─── */
   .cs-loading {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     padding: 120px 40px; gap: 16px;
@@ -361,68 +365,154 @@ const GLOBAL_CSS = `
     font-size: 9px; font-weight: 600; letter-spacing: 3px;
     text-transform: uppercase; color: var(--white-30);
   }
-
   .cs-empty {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     padding: 150px 40px; gap: 14px; text-align: center;
   }
-  .cs-empty-title {
-    font-family: var(--display); font-size: 48px;
-    letter-spacing: 4px; color: var(--white-10);
-  }
-  .cs-empty-sub {
-    font-family: var(--serif); font-size: 14px;
-    font-style: italic; color: var(--white-30);
-    max-width: 260px; line-height: 1.8;
-  }
+  .cs-empty-title { font-family: var(--display); font-size: 48px; letter-spacing: 4px; color: var(--white-10); }
+  .cs-empty-sub { font-family: var(--serif); font-size: 14px; font-style: italic; color: var(--white-30); max-width: 260px; line-height: 1.8; }
 
-  .cs-overlay {
-    position: fixed; inset: 0; z-index: 600;
-    background: rgba(0,0,0,0.72);
-    backdrop-filter: blur(8px);
-    display: flex; justify-content: flex-end;
+  /* ─── DETAIL MODAL ─── */
+  .cs-detail-overlay {
+    position: fixed; inset: 0; z-index: 700;
+    background: rgba(0,0,0,0.82);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
     animation: cs-fade .2s ease;
   }
   @keyframes cs-fade { from{opacity:0} to{opacity:1} }
 
+  .cs-detail {
+    background: var(--surface);
+    border: 1px solid var(--border-hot);
+    border-radius: 16px;
+    width: 100%; max-width: 860px;
+    max-height: 90vh; overflow-y: auto;
+    display: flex; gap: 0;
+    animation: cs-pop .3s cubic-bezier(.34,1.56,.64,1);
+    position: relative;
+  }
+  @keyframes cs-pop { from{opacity:0;transform:scale(0.92)} to{opacity:1;transform:scale(1)} }
+  .cs-detail::-webkit-scrollbar { width: 2px; }
+  .cs-detail::-webkit-scrollbar-thumb { background: var(--border-hot); }
+
+  .cs-detail-close {
+    position: absolute; top: 16px; right: 16px; z-index: 10;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--white-60); border-radius: 8px;
+    width: 36px; height: 36px; font-size: 22px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all .18s; line-height: 1;
+  }
+  .cs-detail-close:hover { border-color: var(--border-hot); color: var(--teal); }
+
+  .cs-detail-images {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column;
+  }
+  .cs-detail-main-img {
+    width: 100%; aspect-ratio: 1/1;
+    background: #09090c; border-radius: 16px 0 0 0;
+    overflow: hidden; position: relative;
+  }
+  .cs-detail-main-img img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform .5s ease;
+  }
+  .cs-detail-main-img:hover img { transform: scale(1.04); }
+  .cs-detail-thumbs {
+    display: flex; gap: 8px; padding: 12px 16px;
+    background: var(--surface2); border-top: 1px solid var(--border);
+    border-radius: 0 0 0 16px;
+  }
+  .cs-detail-thumb {
+    width: 56px; height: 56px; border-radius: 8px; overflow: hidden;
+    border: 2px solid transparent; cursor: pointer;
+    transition: border-color .18s; flex-shrink: 0;
+  }
+  .cs-detail-thumb.active { border-color: var(--teal); }
+  .cs-detail-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .cs-detail-info {
+    flex: 0 0 320px;
+    padding: 40px 32px 32px;
+    display: flex; flex-direction: column; gap: 20px;
+    border-left: 1px solid var(--border);
+  }
+  .cs-detail-overline {
+    font-size: 8px; font-weight: 700; letter-spacing: 4px;
+    text-transform: uppercase; color: var(--teal);
+  }
+  .cs-detail-name {
+    font-family: var(--display);
+    font-size: 38px; letter-spacing: 3px; line-height: 0.95;
+    color: var(--white);
+  }
+  .cs-detail-price {
+    font-family: var(--display);
+    font-size: 44px; letter-spacing: 2px; color: var(--teal); line-height: 1;
+  }
+  .cs-detail-price span {
+    font-family: var(--body); font-size: 12px;
+    font-weight: 500; color: var(--white-30); margin-right: 6px;
+  }
+  .cs-detail-meta {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    border-top: 1px solid var(--border); padding-top: 18px;
+  }
+  .cs-detail-pill {
+    font-size: 8px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    padding: 5px 12px; border-radius: 20px;
+    background: var(--teal-dim); border: 1px solid var(--border-hot); color: var(--teal);
+  }
+  .cs-detail-pill.stock-low {
+    background: rgba(255,112,112,0.08); border-color: rgba(255,112,112,0.3); color: var(--red);
+  }
+  .cs-detail-add {
+    width: 100%;
+    background: var(--teal); border: none; color: #08090c;
+    border-radius: 10px; padding: 16px;
+    font-size: 11px; font-weight: 800; font-family: var(--body);
+    letter-spacing: 3px; text-transform: uppercase;
+    cursor: pointer; transition: opacity .18s, transform .15s;
+    margin-top: auto;
+  }
+  .cs-detail-add:hover { opacity: 0.88; transform: translateY(-2px); }
+  .cs-detail-add.incart { background: var(--surface2); color: var(--teal); border: 1px solid var(--border-hot); }
+
+  /* ─── CART DRAWER ─── */
+  .cs-overlay {
+    position: fixed; inset: 0; z-index: 600;
+    background: rgba(0,0,0,0.72); backdrop-filter: blur(8px);
+    display: flex; justify-content: flex-end;
+    animation: cs-fade .2s ease;
+  }
   .cs-drawer {
     width: 400px; height: 100vh;
-    background: var(--surface);
-    border-left: 1px solid rgba(0,200,180,0.2);
+    background: var(--surface); border-left: 1px solid rgba(0,200,180,0.2);
     display: flex; flex-direction: column;
     animation: cs-slide .28s cubic-bezier(.25,.8,.25,1);
   }
   @keyframes cs-slide { from{transform:translateX(100%)} to{transform:translateX(0)} }
-
   .cs-drawer-head {
-    padding: 28px 30px;
-    border-bottom: 1px solid var(--border);
+    padding: 28px 30px; border-bottom: 1px solid var(--border);
     display: flex; align-items: flex-start; justify-content: space-between;
   }
-  .cs-drawer-title {
-    font-family: var(--display); font-size: 34px;
-    letter-spacing: 3px; color: var(--white); line-height: 1;
-  }
-  .cs-drawer-sub {
-    font-size: 9px; font-weight: 600; letter-spacing: 3px;
-    text-transform: uppercase; color: var(--white-30); margin-top: 5px;
-  }
+  .cs-drawer-title { font-family: var(--display); font-size: 34px; letter-spacing: 3px; color: var(--white); line-height: 1; }
+  .cs-drawer-sub { font-size: 9px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--white-30); margin-top: 5px; }
   .cs-close-btn {
-    background: var(--white-05);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: var(--white-05); border: 1px solid rgba(255,255,255,0.08);
     color: var(--white-60); border-radius: 8px;
     width: 34px; height: 34px; cursor: pointer;
     font-size: 20px; display: flex; align-items: center; justify-content: center;
     transition: all .18s; margin-top: 2px; line-height: 1;
   }
   .cs-close-btn:hover { border-color: var(--border-hot); color: var(--teal); }
-
-  .cs-drawer-items {
-    flex: 1; overflow-y: auto; padding: 0 30px;
-  }
+  .cs-drawer-items { flex: 1; overflow-y: auto; padding: 0 30px; }
   .cs-drawer-items::-webkit-scrollbar { width: 2px; }
   .cs-drawer-items::-webkit-scrollbar-thumb { background: var(--border-hot); }
-
   .cs-cart-item {
     display: flex; align-items: center; gap: 14px;
     padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
@@ -432,11 +522,7 @@ const GLOBAL_CSS = `
     background: var(--surface2); flex-shrink: 0; overflow: hidden;
     border: 1px solid var(--border);
   }
-  .cs-ci-name {
-    font-family: var(--display); font-size: 16px;
-    letter-spacing: 1.5px; color: var(--white);
-    line-height: 1.1; margin-bottom: 4px;
-  }
+  .cs-ci-name { font-family: var(--display); font-size: 16px; letter-spacing: 1.5px; color: var(--white); line-height: 1.1; margin-bottom: 4px; }
   .cs-ci-price { font-size: 11px; color: var(--teal); font-weight: 500; letter-spacing: 1px; }
   .cs-rm-btn {
     background: none; border: 1px solid transparent;
@@ -445,37 +531,16 @@ const GLOBAL_CSS = `
     border-radius: 6px; margin-left: auto; flex-shrink: 0; line-height: 1;
   }
   .cs-rm-btn:hover { color: var(--red); border-color: rgba(255,112,112,0.3); }
-
   .cs-drawer-foot {
-    padding: 24px 30px 30px;
-    border-top: 1px solid var(--border);
+    padding: 24px 30px 30px; border-top: 1px solid var(--border);
     background: var(--surface2);
   }
   .cs-total-row {
     display: flex; justify-content: space-between; align-items: baseline;
-    margin-bottom: 22px; padding-bottom: 18px;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--border);
   }
-  .cs-total-label {
-    font-size: 9px; font-weight: 700; letter-spacing: 4px;
-    text-transform: uppercase; color: var(--white-30);
-  }
-  .cs-total-val {
-    font-family: var(--display); font-size: 38px;
-    letter-spacing: 2px; color: var(--teal); line-height: 1;
-  }
-  .cs-wa-input {
-    width: 100%; background: var(--surface);
-    border: 1px solid var(--border); color: var(--white);
-    border-radius: 8px; padding: 13px 15px;
-    font-size: 13px; font-family: var(--body);
-    outline: none; margin-bottom: 10px;
-    transition: border-color .18s; letter-spacing: 0.3px;
-  }
-  .cs-wa-input::placeholder { color: var(--white-30); }
-  .cs-wa-input:focus { border-color: var(--border-hot); }
-  .cs-wa-error { font-size: 11px; color: var(--red); margin-bottom: 10px; letter-spacing: 0.3px; }
-
+  .cs-total-label { font-size: 9px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: var(--white-30); }
+  .cs-total-val { font-family: var(--display); font-size: 38px; letter-spacing: 2px; color: var(--teal); line-height: 1; }
   .cs-wa-btn {
     width: 100%;
     background: linear-gradient(135deg, #25d366, #128c7e);
@@ -491,173 +556,229 @@ const GLOBAL_CSS = `
   .cs-wa-note { font-size: 10px; color: var(--white-30); text-align: center; margin-top: 10px; line-height: 1.6; }
   .cs-empty-cart {
     font-family: var(--serif); font-style: italic;
-    text-align: center; color: var(--white-30);
-    padding: 68px 0; font-size: 14px;
+    text-align: center; color: var(--white-30); padding: 68px 0; font-size: 14px;
   }
-
-  .cs-delivery-bar {
-    background: var(--teal-dim);
-    border-bottom: 1px solid var(--border-hot);
-    padding: 11px 44px;
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    font-size: 10px; font-weight: 600; letter-spacing: 2.5px;
-    text-transform: uppercase; color: var(--teal);
-    position: relative; overflow: hidden;
-  }
-  .cs-delivery-bar::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(0,200,180,0.08), transparent);
-    animation: shimmer 3.5s ease-in-out infinite;
-  }
-  @keyframes shimmer { 0%,100%{transform:translateX(-100%)} 60%{transform:translateX(100%)} }
-  .cs-delivery-pill {
-    background: var(--teal); color: #08090c;
-    font-size: 8px; font-weight: 800; letter-spacing: 1.5px;
-    padding: 3px 10px; border-radius: 20px;
-    white-space: nowrap;
-  }
-
-  .cs-card-rm {
-    display: none;
-    position: absolute; top: 10px; right: 10px; z-index: 6;
-    background: rgba(13,15,20,0.9);
-    border: 1px solid rgba(255,112,112,0.3);
-    color: rgba(255,112,112,0.7);
-    border-radius: 6px; padding: 4px 9px;
-    font-family: var(--body); font-size: 8px; font-weight: 700;
-    letter-spacing: 1.5px; text-transform: uppercase;
-    cursor: pointer; transition: all .15s;
-    backdrop-filter: blur(6px); line-height: 1;
-  }
-  .cs-card-rm:hover { color: var(--red); border-color: rgba(255,112,112,0.6); background: rgba(255,60,60,0.12); }
-  .cs-card.in-cart .cs-card-rm { display: flex; align-items: center; gap: 5px; }
-
   .cs-delivery-note {
-    background: var(--teal-dim);
-    border: 1px solid var(--border-hot);
-    border-radius: 8px; padding: 10px 14px;
-    margin-bottom: 14px;
+    background: var(--teal-dim); border: 1px solid var(--border-hot);
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;
     display: flex; align-items: center; gap: 10px;
     font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
     text-transform: uppercase; color: var(--teal);
   }
 
+  /* ─── FOOTER ─── */
   .cs-footer {
-    border-top: 1px solid var(--border);
-    padding: 28px 44px;
+    border-top: 1px solid var(--border); padding: 28px 44px;
     display: flex; align-items: center; justify-content: space-between;
   }
-  .cs-footer-brand {
-    font-family: var(--display); font-size: 16px;
-    letter-spacing: 3px; color: var(--white-30);
-  }
+  .cs-footer-brand { font-family: var(--display); font-size: 16px; letter-spacing: 3px; color: var(--white-30); }
   .cs-footer-brand span { color: var(--teal); }
   .cs-footer-copy { font-size: 9px; color: var(--white-30); letter-spacing: 1.5px; }
 
+  /* ─── MOBILE ─── */
   @media (max-width: 768px) {
     .cs-nav { padding: 0 16px; height: 56px; }
-    .cs-logo-name { font-size: 17px; }
+    .cs-logo-name { font-size: 17px; letter-spacing: 2px; }
     .cs-logo-tag { display: none; }
     .cs-nav-dot { display: none; }
     .cs-cart-btn { padding: 8px 14px 8px 12px; font-size: 9px; letter-spacing: 2px; }
+
     .cs-delivery-bar { padding: 9px 16px; font-size: 9px; gap: 7px; flex-wrap: wrap; justify-content: center; }
+
     .cs-hero { padding: 20px 16px 18px; }
     .cs-hero-h1 { font-size: clamp(32px, 10vw, 48px); }
     .cs-hero-sub { font-size: 11px; }
     .cs-hero-stats { gap: 16px; margin-top: 12px; }
     .cs-stat-num { font-size: 22px; }
+
     .cs-filter-wrap { padding: 0 16px; }
     .cs-filter-btn { padding: 14px 14px 12px; font-size: 9px; letter-spacing: 2px; }
-    .cs-grid { grid-template-columns: 1fr; }
+
+    .cs-grid-wrap { padding: 16px; }
+    .cs-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .cs-card-name { font-size: 15px; }
+    .cs-price { font-size: 20px; }
+    .cs-card-body { padding: 10px 10px 12px; gap: 8px; }
+    .cs-add-btn { padding: 9px; font-size: 8px; letter-spacing: 1.5px; }
+
+    .cs-detail {
+      flex-direction: column;
+      max-width: 100%;
+      max-height: 92vh;
+      border-radius: 16px;
+    }
+    .cs-detail-images { min-width: unset; }
+    .cs-detail-main-img { border-radius: 16px 16px 0 0; aspect-ratio: 4/3; }
+    .cs-detail-thumbs { border-radius: 0; }
+    .cs-detail-info {
+      flex: none; border-left: none;
+      border-top: 1px solid var(--border);
+      padding: 22px 20px 24px;
+      gap: 14px;
+    }
+    .cs-detail-name { font-size: 28px; }
+    .cs-detail-price { font-size: 34px; }
+
     .cs-drawer { width: 100vw; }
     .cs-drawer-head { padding: 20px; }
     .cs-drawer-items { padding: 0 20px; }
     .cs-drawer-foot { padding: 18px 20px 24px; }
+
     .cs-footer { padding: 20px 16px; flex-direction: column; gap: 8px; text-align: center; }
   }
-  @media (max-width: 480px) {
-    .cs-hero-h1 { font-size: 32px; letter-spacing: 2px; }
-    .cs-card-body { padding: 14px 16px 18px; }
+
+  @media (max-width: 380px) {
+    .cs-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .cs-grid-wrap { padding: 10px; }
+    .cs-card-name { font-size: 13px; }
+    .cs-price { font-size: 17px; }
+    .cs-add-btn { font-size: 7px; letter-spacing: 1px; padding: 8px; }
   }
 `;
 
 function useGlobalStyle(css) {
+  if (typeof document !== "undefined") {
+    const id = "capstore-v5";
+    if (!document.getElementById(id)) {
+      const el = document.createElement("style");
+      el.id = id;
+      el.textContent = css;
+      document.head.appendChild(el);
+    }
+  }
   useEffect(() => {
-    const id = "capstore-v4";
-    if (document.getElementById(id)) return;
-    const el = document.createElement("style");
-    el.id = id; el.textContent = css;
-    document.head.appendChild(el);
     return () => {
-      ["capstore-v3","capstore-v2","capstore-styles"].forEach(old => {
-        const el = document.getElementById(old);
-        if (el) el.remove();
+      ["capstore-v4", "capstore-v3", "capstore-v2", "capstore-styles"].forEach(old => {
+        const o = document.getElementById(old);
+        if (o) o.remove();
       });
     };
   }, []);
 }
 
-function CapCard({ cap, inCart, onAdd, onRemove }) {
+/* ──────────────────────────────────────────────
+   CAP DETAIL MODAL
+────────────────────────────────────────────── */
+function CapDetail({ cap, inCart, onAdd, onClose }) {
   const photos = [cap.imgFront, cap.imgRear].filter(Boolean);
   if (!photos.length && cap.img) photos.push(cap.img);
   const [idx, setIdx] = useState(0);
-  const canPrev = photos.length > 1 && idx > 0;
-  const canNext = photos.length > 1 && idx < photos.length - 1;
-  const prev = e => { e.stopPropagation(); setIdx(i => Math.max(0, i - 1)); };
-  const next = e => { e.stopPropagation(); setIdx(i => Math.min(photos.length - 1, i + 1)); };
-  const viewLabel = photos.length > 1 ? (idx === 0 ? "FRONT" : "REAR") : null;
+  const stockLow = (cap.stock || 0) <= 2;
+
+  useEffect(() => {
+    const handler = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <div className="cs-detail-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="cs-detail">
+        <button className="cs-detail-close" onClick={onClose}>×</button>
+
+        <div className="cs-detail-images">
+          <div className="cs-detail-main-img">
+            {photos.length > 0
+              ? <img src={photos[idx]} alt={cap.name} />
+              : <div className="cs-slider-ph" style={{ height: "100%" }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                  <span>No photo</span>
+                </div>
+            }
+          </div>
+          {photos.length > 1 && (
+            <div className="cs-detail-thumbs">
+              {photos.map((p, i) => (
+                <div
+                  key={i}
+                  className={`cs-detail-thumb${i === idx ? " active" : ""}`}
+                  onClick={() => setIdx(i)}
+                >
+                  <img src={p} alt={`${cap.name} view ${i + 1}`} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="cs-detail-info">
+          <div className="cs-detail-overline">Capstore.KE — Authentic Headwear</div>
+          <div className="cs-detail-name">{cap.name}</div>
+          <div className="cs-detail-price">
+            <span>KSh</span>{cap.price?.toLocaleString()}
+          </div>
+          <div className="cs-detail-meta">
+            <div className="cs-detail-pill">{cap.type}</div>
+            <div className={`cs-detail-pill${stockLow ? " stock-low" : ""}`}>
+              {stockLow ? `Only ${cap.stock} left` : `${cap.stock} in stock`}
+            </div>
+          </div>
+          <button
+            className={`cs-detail-add${inCart ? " incart" : ""}`}
+            onClick={() => { onAdd(cap); }}
+          >
+            {inCart ? "✓  In Bag — View Bag" : "Add to Bag"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────
+   GRID CARD
+────────────────────────────────────────────── */
+function CapCard({ cap, inCart, onOpen }) {
+  const thumb = cap.imgFront || cap.img || null;
   const stockLow = (cap.stock || 0) <= 2;
 
   return (
-    <div className={`cs-card${inCart ? " in-cart" : ""}`}>
+    <div className="cs-card" onClick={() => onOpen(cap)}>
       <div className="cs-slider">
-        {photos.length > 0 ? (
-          <>
-            <img key={idx} src={photos[idx]} alt={cap.name} className="cs-slider-img" />
-            {viewLabel && <span className="cs-view-tag">{viewLabel}</span>}
-            {canPrev && <button className="cs-arrow left" onClick={prev}>‹</button>}
-            {canNext && <button className="cs-arrow right" onClick={next}>›</button>}
-            {photos.length > 1 && (
-              <div className="cs-dots">
-                {photos.map((_, i) => <div key={i} className={`cs-dot${i === idx ? " active" : ""}`} />)}
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="cs-slider-ph">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <polyline points="21 15 16 10 5 21"/>
-            </svg>
-            <span>No photo</span>
-          </div>
+        {thumb
+          ? <img src={thumb} alt={cap.name} className="cs-slider-img" />
+          : <div className="cs-slider-ph">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+              <span>No photo</span>
+            </div>
+        }
+        {inCart && (
+          <span className="cs-view-tag" style={{ background: "var(--teal)", color: "#08090c", borderColor: "var(--teal)" }}>
+            ✓ In Bag
+          </span>
         )}
-        <button className="cs-card-rm" onClick={e => { e.stopPropagation(); onRemove(cap.id); }}>
-          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-          Remove
-        </button>
       </div>
       <div className="cs-card-body">
-        <div className="cs-card-top">
+        <div>
           <div className="cs-card-name">{cap.name}</div>
-          <div className="cs-type-badge">{cap.type}</div>
+          <div className="cs-type-badge" style={{ marginTop: "5px" }}>{cap.type}</div>
         </div>
         <div className="cs-price-row">
           <div className="cs-price"><span className="cs-price-currency">KSh</span>{cap.price?.toLocaleString()}</div>
-          <div className={`cs-stock${stockLow ? " low" : ""}`}>{stockLow ? `${cap.stock} left` : `${cap.stock} in stock`}</div>
+          <div className={`cs-stock${stockLow ? " low" : ""}`}>{stockLow ? `${cap.stock} left` : "In stock"}</div>
         </div>
-        <button className={`cs-add-btn${inCart ? " incart" : ""}`} onClick={() => onAdd(cap)}>
-          <span>{inCart ? "✓  In Bag" : "Add to Bag"}</span>
+        <button
+          className={`cs-add-btn${inCart ? " incart" : ""}`}
+          onClick={e => { e.stopPropagation(); onOpen(cap); }}
+        >
+          <span>{inCart ? "✓ In Bag" : "View & Buy"}</span>
         </button>
       </div>
     </div>
   );
 }
 
+/* ──────────────────────────────────────────────
+   MAIN STOREFRONT
+────────────────────────────────────────────── */
 export default function StoreFront() {
   useGlobalStyle(GLOBAL_CSS);
   const [caps,       setCaps]       = useState([]);
@@ -665,8 +786,7 @@ export default function StoreFront() {
   const [cart,       setCart]       = useState([]);
   const [filter,     setFilter]     = useState("all");
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [waNum,      setWaNum]      = useState("");
-  const [waError,    setWaError]    = useState("");
+  const [detailCap,  setDetailCap]  = useState(null);
   const [ordering,   setOrdering]   = useState(false);
 
   useEffect(() => {
@@ -683,29 +803,24 @@ export default function StoreFront() {
 
   const visible        = filter === "all" ? caps : caps.filter(c => c.type === filter);
   const inCart         = id => cart.some(c => c.id === id);
-  const addToCart      = cap => { if (!inCart(cap.id)) setCart(p => [...p, cap]); setDrawerOpen(true); };
+  const addToCart      = cap => {
+    if (!inCart(cap.id)) setCart(p => [...p, cap]);
+    setDetailCap(null);
+    setDrawerOpen(true);
+  };
   const removeFromCart = id => setCart(p => p.filter(c => c.id !== id));
   const total          = cart.reduce((s, c) => s + (c.price || 0), 0);
 
   const orderOnWhatsApp = async () => {
     if (!cart.length) return;
-    const cleaned = waNum.replace(/\s+/g, "").replace(/^0/, "254");
-    if (!cleaned || cleaned.length < 9) {
-      setWaError("Enter your WhatsApp number to confirm.");
-      return;
-    }
-    setWaError("");
     setOrdering(true);
-
     try {
       await addDoc(collection(db, "orders"), {
         id:        `ORD-${String(Date.now()).slice(-6)}`,
-        customer:  "Customer",
-        phone:     waNum.trim(),
         items:     cart.map(c => `${c.name} — KSh ${c.price?.toLocaleString()}`),
         total,
         status:    "Pending",
-        date:      new Date().toLocaleDateString("en-KE", { day:"numeric", month:"short" }),
+        date:      new Date().toLocaleDateString("en-KE", { day: "numeric", month: "short" }),
         createdAt: serverTimestamp(),
       });
     } catch (e) {
@@ -717,7 +832,7 @@ export default function StoreFront() {
     const items = cart.map((c, i) => `${i + 1}. ${c.name} — KSh ${c.price?.toLocaleString()}`).join("%0A");
     const msg =
       `*CAPSTORE.KE — NEW ORDER* 🧢%0A━━━━━━━━━━━━━━━━━━%0A${items}%0A━━━━━━━━━━━━━━━━━━%0A` +
-      `*Total: KSh ${total.toLocaleString()}*%0A%0A*Customer:* ${waNum.trim()}%0A%0A` +
+      `*Total: KSh ${total.toLocaleString()}*%0A%0A` +
       `Hi! I'd like to order the above. Please confirm availability, payment & delivery. Thank you!`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
   };
@@ -728,8 +843,8 @@ export default function StoreFront() {
       {/* NAV */}
       <nav className="cs-nav">
         <div className="cs-nav-left">
-          <div className="cs-logo">
-            <div className="cs-logo-name"><span>_.</span>CAPSTORE<span style={{color:'var(--white-30)',fontSize:'14px'}}>.KE</span></div>
+          <div className="cs-logo" onClick={() => setDetailCap(null)}>
+            <div className="cs-logo-name"><span>_.</span>CAPSTORE<span style={{ color: "var(--white-30)", fontSize: "14px" }}>.KE</span></div>
             <div className="cs-logo-tag">Premium Headwear · Kenya</div>
           </div>
         </div>
@@ -737,9 +852,9 @@ export default function StoreFront() {
           <div className="cs-nav-dot">Nairobi, KE</div>
           <button className="cs-cart-btn" onClick={() => setDrawerOpen(true)}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <path d="M16 10a4 4 0 01-8 0"/>
+              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <path d="M16 10a4 4 0 01-8 0" />
             </svg>
             <span>Bag</span>
             {cart.length > 0 && <span className="cs-cart-count">{cart.length}</span>}
@@ -749,14 +864,14 @@ export default function StoreFront() {
 
       {/* DELIVERY BANNER */}
       <div className="cs-delivery-bar">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{position:'relative',zIndex:1}}>
-          <rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/>
-          <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ position: "relative", zIndex: 1 }}>
+          <rect x="1" y="3" width="15" height="13" rx="1" /><path d="M16 8h4l3 5v3h-7V8z" />
+          <circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
         </svg>
-        <span style={{position:'relative',zIndex:1}}>Free delivery within</span>
-        <span className="cs-delivery-pill" style={{position:'relative',zIndex:1}}>Nairobi CBD</span>
-        <span style={{position:'relative',zIndex:1,color:'var(--white-30)'}}>·</span>
-        <span style={{position:'relative',zIndex:1}}>Same-day pickup available</span>
+        <span style={{ position: "relative", zIndex: 1 }}>Free delivery within</span>
+        <span className="cs-delivery-pill" style={{ position: "relative", zIndex: 1 }}>Nairobi CBD</span>
+        <span style={{ position: "relative", zIndex: 1, color: "var(--white-30)" }}>·</span>
+        <span style={{ position: "relative", zIndex: 1 }}>Same-day pickup available</span>
       </div>
 
       {/* HERO */}
@@ -775,7 +890,7 @@ export default function StoreFront() {
               <div className="cs-stat-label">Styles</div>
             </div>
             <div className="cs-stat-item">
-              <div className="cs-stat-num" style={{fontSize:'18px',paddingTop:'6px'}}>59FIFTY</div>
+              <div className="cs-stat-num" style={{ fontSize: "18px", paddingTop: "6px" }}>59FIFTY</div>
               <div className="cs-stat-label">Authentic</div>
             </div>
           </div>
@@ -785,7 +900,7 @@ export default function StoreFront() {
       {/* FILTER */}
       <div className="cs-filter-wrap">
         <div className="cs-filter-bar">
-          {[["all","All Pieces"],["fitted","Fitted"],["snapback","Snapback"]].map(([val, label]) => (
+          {[["all", "All Pieces"], ["fitted", "Fitted"], ["snapback", "Snapback"]].map(([val, label]) => (
             <button key={val} className={`cs-filter-btn${filter === val ? " active" : ""}`} onClick={() => setFilter(val)}>
               {label}
             </button>
@@ -811,10 +926,17 @@ export default function StoreFront() {
           <div className="cs-empty-sub">Try a different filter above.</div>
         </div>
       ) : (
-        <div className="cs-grid">
-          {visible.map(cap => (
-            <CapCard key={cap.id} cap={cap} inCart={inCart(cap.id)} onAdd={addToCart} onRemove={removeFromCart} />
-          ))}
+        <div className="cs-grid-wrap">
+          <div className="cs-grid">
+            {visible.map(cap => (
+              <CapCard
+                key={cap.id}
+                cap={cap}
+                inCart={inCart(cap.id)}
+                onOpen={setDetailCap}
+              />
+            ))}
+          </div>
         </div>
       )}
 
@@ -824,7 +946,17 @@ export default function StoreFront() {
         <div className="cs-footer-copy">© 2024 — All rights reserved</div>
       </div>
 
-      {/* DRAWER */}
+      {/* ── DETAIL MODAL ── */}
+      {detailCap && (
+        <CapDetail
+          cap={detailCap}
+          inCart={inCart(detailCap.id)}
+          onAdd={addToCart}
+          onClose={() => setDetailCap(null)}
+        />
+      )}
+
+      {/* ── CART DRAWER ── */}
       {drawerOpen && (
         <div className="cs-overlay" onClick={e => e.target === e.currentTarget && setDrawerOpen(false)}>
           <div className="cs-drawer">
@@ -835,6 +967,7 @@ export default function StoreFront() {
               </div>
               <button className="cs-close-btn" onClick={() => setDrawerOpen(false)}>×</button>
             </div>
+
             <div className="cs-drawer-items">
               {cart.length === 0 ? (
                 <div className="cs-empty-cart">Your bag is empty</div>
@@ -842,11 +975,11 @@ export default function StoreFront() {
                 <div key={c.id} className="cs-cart-item">
                   <div className="cs-ci-thumb">
                     {(c.imgFront || c.img)
-                      ? <img src={c.imgFront || c.img} alt={c.name} style={{width:"100%",height:"100%",objectFit:"cover"}} />
-                      : <span style={{fontSize:"18px",opacity:.2,display:"flex",alignItems:"center",justifyContent:"center",height:"100%"}}>🧢</span>
+                      ? <img src={c.imgFront || c.img} alt={c.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : <span style={{ fontSize: "18px", opacity: .2, display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>🧢</span>
                     }
                   </div>
-                  <div style={{flex:1}}>
+                  <div style={{ flex: 1 }}>
                     <div className="cs-ci-name">{c.name}</div>
                     <div className="cs-ci-price">KSh {c.price?.toLocaleString()}</div>
                   </div>
@@ -854,6 +987,7 @@ export default function StoreFront() {
                 </div>
               ))}
             </div>
+
             <div className="cs-drawer-foot">
               <div className="cs-total-row">
                 <span className="cs-total-label">Total</span>
@@ -861,30 +995,26 @@ export default function StoreFront() {
               </div>
               <div className="cs-delivery-note">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/>
-                  <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+                  <rect x="1" y="3" width="15" height="13" rx="1" /><path d="M16 8h4l3 5v3h-7V8z" />
+                  <circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
                 </svg>
-                Free delivery · <span style={{color:'var(--white)',fontWeight:700}}>Nairobi CBD</span>
+                Free delivery · <span style={{ color: "var(--white)", fontWeight: 700 }}>Nairobi CBD</span>
               </div>
-              <input
-                type="tel" className="cs-wa-input"
-                placeholder="Your WhatsApp number e.g. 0712 345 678"
-                value={waNum} onChange={e => { setWaNum(e.target.value); setWaError(""); }}
-              />
-              {waError && <div className="cs-wa-error">{waError}</div>}
-              <button className="cs-wa-btn" onClick={orderOnWhatsApp} disabled={cart.length === 0 || ordering}>
-                {ordering ? (
-                  <span>Saving order…</span>
-                ) : (
+              <button
+                className="cs-wa-btn"
+                onClick={orderOnWhatsApp}
+                disabled={cart.length === 0 || ordering}
+              >
+                {ordering ? <span>Saving order…</span> : (
                   <>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                     </svg>
                     Order via WhatsApp
                   </>
                 )}
               </button>
-              <div className="cs-wa-note">Your number goes directly to the seller to confirm your order.</div>
+              <div className="cs-wa-note">Tap to send your order directly to the seller on WhatsApp.</div>
             </div>
           </div>
         </div>
