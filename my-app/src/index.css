@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+/* CapStore brand tokens — available as Tailwind utilities,
+   e.g. bg-ink, text-brass-light, font-display, rounded-md */
+@theme {
+  --color-ink: #0c0c0d;
+  --color-ink-soft: #121214;
+  --color-charcoal: #18181b;
+  --color-charcoal-hi: #212125;
+
+  --color-bone: #f5f1e8;
+  --color-stone: #948d80;
+  --color-stone-dim: #605a50;
+
+  --color-brass: #c19a4f;
+  --color-brass-light: #e3c684;
+
+  --color-crimson: #a3323c;
+  --color-crimson-light: #c65b62;
+
+  --color-plum: #6b5b73;
+  --color-sage: #7c8a72;
+  --color-slate: #5c7480;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "Space Mono", monospace;
+
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+}
+
+/* Then your existing global imports, e.g.: */
+/* @import "./App.css"; */
