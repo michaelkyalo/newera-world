@@ -6,7 +6,7 @@ import {
 } from "firebase/firestore";
 import { db, authReady } from "../firebase";
 
-/* ─── Styles ────────────────────────────────────────────────── */
+
 const S = {
   page:    { minHeight:"100vh", background:"#08090c", fontFamily:"'Segoe UI',sans-serif", color:"#f0f0f2" },
   layout:  { display:"flex", minHeight:"100vh" },
