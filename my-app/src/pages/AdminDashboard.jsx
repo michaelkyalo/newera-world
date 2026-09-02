@@ -110,11 +110,12 @@ const S = {
   imgUpload:  { border:"1.5px dashed rgba(0,200,180,0.25)", borderRadius:"10px", padding:"16px 12px", textAlign:"center", cursor:"pointer", transition:"border-color .15s", position:"relative" },
   imgLabel:   { fontSize:"10px", color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"1px", marginBottom:"8px", display:"block" },
   clearPhotoBtn: { position:"absolute", top:"6px", right:"6px", background:"rgba(255,69,69,0.2)", border:"none", color:"#ff7070", borderRadius:"50%", width:"20px", height:"20px", cursor:"pointer", fontSize:"12px", display:"flex", alignItems:"center", justifyContent:"center", lineHeight:1 },
+  uploadingBadge: { position:"absolute", inset:0, background:"rgba(8,9,12,0.75)", borderRadius:"10px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"11px", color:"#00c8b4", fontWeight:"700", letterSpacing:"0.5px" },
   field:      { marginBottom:"16px" },
   fieldLabel: { display:"block", fontSize:"11px", color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"1px", marginBottom:"7px" },
   input:      { width:"100%", background:"#111318", border:"1px solid rgba(0,200,180,0.15)", color:"#f0f0f2", borderRadius:"8px", padding:"10px 14px", fontSize:"13px", outline:"none", fontFamily:"inherit", boxSizing:"border-box" },
-  typeToggleRow: { display:"flex", gap:"8px", marginBottom:"16px" },
-  typeToggleBtn: a => ({ flex:1, padding:"10px", borderRadius:"8px", border: a?"2px solid #00c8b4":"1px solid rgba(0,200,180,0.15)", background: a?"rgba(0,200,180,0.12)":"#111318", color: a?"#00c8b4":"rgba(255,255,255,0.4)", fontWeight: a?"700":"400", fontSize:"13px", cursor:"pointer", transition:"all .15s", fontFamily:"inherit", letterSpacing:"0.5px" }),
+  typeToggleRow: { display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px", marginBottom:"16px" },
+  typeToggleBtn: a => ({ padding:"10px", borderRadius:"8px", border: a?"2px solid #00c8b4":"1px solid rgba(0,200,180,0.15)", background: a?"rgba(0,200,180,0.12)":"#111318", color: a?"#00c8b4":"rgba(255,255,255,0.4)", fontWeight: a?"700":"400", fontSize:"13px", cursor:"pointer", transition:"all .15s", fontFamily:"inherit", letterSpacing:"0.5px" }),
   fieldRow:   { display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px" },
   modalFoot:  { padding:"14px 22px", borderTop:"1px solid rgba(0,200,180,0.1)", display:"flex", gap:"8px", justifyContent:"flex-end", position:"sticky", bottom:0, background:"#0d0f14" },
   cancelBtn:  { background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.6)", borderRadius:"8px", padding:"9px 20px", fontSize:"13px", cursor:"pointer", fontFamily:"inherit" },
@@ -137,6 +138,13 @@ const NAV = [
   { key:"inventory", label:"Inventory" },
   { key:"orders",    label:"Orders"    },
   { key:"settings",  label:"Settings"  },
+];
+
+const CAP_TYPES = [
+  { key:"fitted",    label:"Fitted",    icon:"🧢" },
+  { key:"snapback",  label:"Snapback",  icon:"🔄" },
+  { key:"street",    label:"Street",    icon:"🏙️" },
+  { key:"balaclava", label:"Balaclava", icon:"🥷" },
 ];
 
 const ADMIN_MOBILE_CSS = `
@@ -170,23 +178,45 @@ function useAdminStyle() {
   }, []);
 }
 
-/* ─── Image compression helper ──────────────────────────────── */
-function compressImage(file) {
+/*
+ * ── Image compression helper ────────────────────────────────
+ * No Firebase Storage on this project (would need the Blaze
+ * plan), so compressed photos are stored directly as base64 in
+ * the Firestore doc. Firestore caps a document at ~1MB total, so
+ * this re-encodes at shrinking quality until each image's data
+ * URL is comfortably small - two photos plus text fields should
+ * land well under that limit.
+ *
+ * Trade-off: WhatsApp can only generate a photo preview from a
+ * real https:// link, not from base64 text, so order messages
+ * built from these images won't show a photo card - just the
+ * item details. The photo still displays fine everywhere inside
+ * the app itself (admin cards, storefront, product modal).
+ */
+function compressImage(file, { maxDim = 480, maxChars = 220000, minQuality = 0.35 } = {}) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
-      const MAX = 600;
       let w = img.width, h = img.height;
-      if (w > MAX || h > MAX) {
-        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-        else       { w = Math.round(w * MAX / h); h = MAX; }
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else       { w = Math.round(w * maxDim / h); h = maxDim; }
       }
       const canvas = document.createElement("canvas");
       canvas.width = w; canvas.height = h;
       canvas.getContext("2d").drawImage(img, 0, 0, w, h);
       URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL("image/jpeg", 0.7));
+
+      let quality = 0.7;
+      let dataUrl = canvas.toDataURL("image/jpeg", quality);
+
+      while (dataUrl.length > maxChars && quality > minQuality) {
+        quality = Math.round((quality - 0.1) * 10) / 10;
+        dataUrl = canvas.toDataURL("image/jpeg", quality);
+      }
+
+      resolve(dataUrl);
     };
     img.onerror = reject;
     img.src = url;
@@ -239,11 +269,15 @@ export default function AdminDashboard() {
   const [form,         setForm]        = useState({});
   const [previewFront, setPreviewFront]= useState(null);
   const [previewRear,  setPreviewRear] = useState(null);
+  const [uploadingSide,setUploadingSide]= useState({ front:false, rear:false });
   const [toast,        setToast]       = useState("");
   const [toastShow,    setToastShow]   = useState(false);
   const [saving,       setSaving]      = useState(false);
   const [authed,       setAuthed]      = useState(false);
   const [authError,    setAuthError]   = useState(false);
+  const [orderModal,   setOrderModal]  = useState(false);
+  const [orderForm,    setOrderForm]   = useState({});
+  const [savingOrder,  setSavingOrder] = useState(false);
   const frontRef = useRef();
   const rearRef  = useRef();
 
@@ -290,6 +324,7 @@ export default function AdminDashboard() {
   const openAdd = () => {
     setForm({ name:"", type:"fitted", price:1350, stock:1, color:"" });
     setPreviewFront(null); setPreviewRear(null);
+    setUploadingSide({ front:false, rear:false });
     setModal({ mode:"add" });
   };
 
@@ -297,6 +332,7 @@ export default function AdminDashboard() {
     setForm({ ...cap });
     setPreviewFront(cap.imgFront || null);
     setPreviewRear(cap.imgRear   || null);
+    setUploadingSide({ front:false, rear:false });
     setModal({ mode:"edit", cap });
   };
 
@@ -310,6 +346,10 @@ export default function AdminDashboard() {
 
   const saveModal = async () => {
     if (!form.name?.trim()) { showToast("Enter a cap name"); return; }
+    if (uploadingSide.front || uploadingSide.rear) {
+      showToast("Still uploading photo… please wait");
+      return;
+    }
     setSaving(true);
     const capData = {
       name:     form.name.trim(),
@@ -367,16 +407,66 @@ export default function AdminDashboard() {
     } catch (e) { showToast("Error removing order"); console.error(e); }
   };
 
-  /* ── Image handler with compression ── */
+  /*
+   * ── Manually add an order ────────────────────────────────────
+   * Orders placed on WhatsApp don't write to Firestore on their
+   * own, so this lets the admin log one by hand - item, quantity,
+   * and money (price per unit, with total computed from the two).
+   */
+  const openAddOrder = () => {
+    setOrderForm({ customer:"", phone:"", item:"", quantity:1, price:0 });
+    setOrderModal(true);
+  };
+
+  const orderFormTotal = Number(orderForm.price || 0) * Number(orderForm.quantity || 0);
+
+  const saveOrder = async () => {
+    if (!orderForm.item?.trim()) { showToast("Enter an item name"); return; }
+    if (!orderForm.quantity || Number(orderForm.quantity) <= 0) { showToast("Enter a valid quantity"); return; }
+    if (orderForm.price === "" || Number(orderForm.price) < 0) { showToast("Enter a valid price"); return; }
+
+    setSavingOrder(true);
+    try {
+      await addDoc(collection(db, "orders"), {
+        customer: orderForm.customer?.trim() || "",
+        phone:    orderForm.phone?.trim()    || "",
+        items:    [`${orderForm.item.trim()} x${Number(orderForm.quantity)} - KSh ${orderFormTotal.toLocaleString()}`],
+        total:    orderFormTotal,
+        status:   "Pending",
+        createdAt: serverTimestamp(),
+      });
+      showToast("Order added ✓");
+      setOrderModal(false);
+    } catch (e) {
+      showToast("Error: " + e.message);
+      console.error(e);
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
+  /*
+   * ── Image handler ──────────────────────────────────────────
+   * No Firebase Storage available, so this just compresses the
+   * photo locally and stores the base64 result directly - no
+   * network upload step, no hosted URL.
+   */
   const handleImg = side => async e => {
     const file = e.target.files[0];
     if (!file) return;
+
+    const setPreview = side === "front" ? setPreviewFront : setPreviewRear;
+
     try {
+      setUploadingSide(p => ({ ...p, [side]: true }));
       const compressed = await compressImage(file);
-      side === "front" ? setPreviewFront(compressed) : setPreviewRear(compressed);
+      setPreview(compressed);
     } catch (err) {
-      console.error("Image compression failed:", err);
+      console.error("Image processing failed:", err);
       showToast("Failed to process image");
+      setPreview(null);
+    } finally {
+      setUploadingSide(p => ({ ...p, [side]: false }));
     }
   };
 
@@ -512,9 +602,12 @@ export default function AdminDashboard() {
               <>
                 <div style={S.sectionHead}>
                   <span style={S.sectionTitle}>Orders ({orders.length})</span>
-                  {orders.length > 0 && (
-                    <span style={{ fontSize:"11px", color:"rgba(255,255,255,0.3)" }}>Click status to cycle</span>
-                  )}
+                  <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
+                    {orders.length > 0 && (
+                      <span style={{ fontSize:"11px", color:"rgba(255,255,255,0.3)" }}>Click status to cycle</span>
+                    )}
+                    <button style={S.addBtn} onClick={openAddOrder}>+ Add Order</button>
+                  </div>
                 </div>
 
                 {orders.length === 0 ? (
@@ -594,6 +687,18 @@ export default function AdminDashboard() {
                   style={{ ...S.saveBtn, padding:"11px 28px", marginTop:"6px" }}
                   onClick={() => showToast("Settings saved ✓")}
                 >Save Settings</button>
+
+                <div style={{ marginTop:"36px", paddingTop:"24px", borderTop:"1px solid rgba(0,200,180,0.1)" }}>
+                  <div style={{ fontSize:"13px", fontWeight:"700", color:"#f0f0f2", marginBottom:"6px" }}>
+                    About product photos
+                  </div>
+                  <div style={{ fontSize:"12px", color:"rgba(255,255,255,0.4)", lineHeight:"1.6" }}>
+                    Photos are compressed and stored directly in the
+                    database. They display normally everywhere in the
+                    app, but WhatsApp order messages won't show a photo
+                    preview card - only the item name, colour and price.
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -629,6 +734,9 @@ export default function AdminDashboard() {
                           <div style={{ fontSize:"11px", color:"rgba(255,255,255,0.3)" }}>Upload {side}</div>
                         </>
                       )}
+                      {uploadingSide[side] && (
+                        <div style={S.uploadingBadge}>Processing…</div>
+                      )}
                       <input ref={ref} type="file" accept="image/*" style={{ display:"none" }} onChange={handleImg(side)} />
                     </div>
                   </div>
@@ -639,9 +747,9 @@ export default function AdminDashboard() {
               <div style={S.field}>
                 <label style={S.fieldLabel}>Cap type</label>
                 <div style={S.typeToggleRow}>
-                  {["fitted","snapback"].map(t => (
-                    <button key={t} style={S.typeToggleBtn(form.type === t)} onClick={() => setForm(p => ({ ...p, type:t }))}>
-                      {t === "fitted" ? "🧢 Fitted" : "🔄 Snapback"}
+                  {CAP_TYPES.map(t => (
+                    <button key={t.key} style={S.typeToggleBtn(form.type === t.key)} onClick={() => setForm(p => ({ ...p, type:t.key }))}>
+                      {t.icon} {t.label}
                     </button>
                   ))}
                 </div>
@@ -686,8 +794,75 @@ export default function AdminDashboard() {
 
             <div style={S.modalFoot}>
               <button style={S.cancelBtn} onClick={() => setModal(null)}>Cancel</button>
-              <button style={{ ...S.saveBtn, opacity: saving ? 0.6 : 1 }} onClick={saveModal} disabled={saving}>
-                {saving ? "Saving…" : modal.mode === "add" ? "Add Cap" : "Save Changes"}
+              <button style={{ ...S.saveBtn, opacity: (saving || uploadingSide.front || uploadingSide.rear) ? 0.6 : 1 }} onClick={saveModal} disabled={saving || uploadingSide.front || uploadingSide.rear}>
+                {saving ? "Saving…" : (uploadingSide.front || uploadingSide.rear) ? "Processing…" : modal.mode === "add" ? "Add Cap" : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add Order Modal ── */}
+      {orderModal && (
+        <div style={S.overlay} onClick={e => e.target === e.currentTarget && setOrderModal(false)}>
+          <div style={S.modal}>
+            <div style={S.modalHead}>
+              <span style={S.modalTitle}>Add order</span>
+              <button style={S.modalClose} onClick={() => setOrderModal(false)}>×</button>
+            </div>
+            <div style={S.modalBody}>
+
+              <div style={S.field}>
+                <label style={S.fieldLabel}>Customer name</label>
+                <input
+                  style={S.input} value={orderForm.customer || ""} placeholder="e.g. Michael Kyalo"
+                  onChange={e => setOrderForm(p => ({ ...p, customer:e.target.value }))}
+                />
+              </div>
+
+              <div style={S.field}>
+                <label style={S.fieldLabel}>Phone</label>
+                <input
+                  style={S.input} value={orderForm.phone || ""} placeholder="e.g. 254712345678"
+                  onChange={e => setOrderForm(p => ({ ...p, phone:e.target.value }))}
+                />
+              </div>
+
+              <div style={S.field}>
+                <label style={S.fieldLabel}>Item</label>
+                <input
+                  style={S.input} value={orderForm.item || ""} placeholder="e.g. NY (RED)"
+                  onChange={e => setOrderForm(p => ({ ...p, item:e.target.value }))}
+                />
+              </div>
+
+              <div style={S.fieldRow}>
+                <div style={S.field}>
+                  <label style={S.fieldLabel}>Quantity</label>
+                  <input
+                    style={S.input} type="number" min="1" value={orderForm.quantity ?? ""}
+                    onChange={e => setOrderForm(p => ({ ...p, quantity:parseInt(e.target.value) || 0 }))}
+                  />
+                </div>
+                <div style={S.field}>
+                  <label style={S.fieldLabel}>Price per unit (KSh)</label>
+                  <input
+                    style={S.input} type="number" min="0" value={orderForm.price ?? ""}
+                    onChange={e => setOrderForm(p => ({ ...p, price:parseInt(e.target.value) || 0 }))}
+                  />
+                </div>
+              </div>
+
+              <div style={{ fontSize:"13px", color:"rgba(255,255,255,0.5)" }}>
+                Total: <strong style={{ color:"#00c8b4" }}>KSh {orderFormTotal.toLocaleString()}</strong>
+              </div>
+
+            </div>
+
+            <div style={S.modalFoot}>
+              <button style={S.cancelBtn} onClick={() => setOrderModal(false)}>Cancel</button>
+              <button style={{ ...S.saveBtn, opacity: savingOrder ? 0.6 : 1 }} onClick={saveOrder} disabled={savingOrder}>
+                {savingOrder ? "Saving…" : "Add Order"}
               </button>
             </div>
           </div>

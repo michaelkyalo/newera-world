@@ -101,6 +101,9 @@
   min-height: 100vh;
   overflow-x: hidden;
   position: relative;
+  /* Contain rubber-band/pull-to-refresh bounce to the app itself
+     instead of it chaining up to the browser chrome on iOS/Android. */
+  overscroll-behavior-y: contain;
 }
 
 .capstore-app h1,
@@ -134,6 +137,86 @@
 .capstore-app :focus-visible {
   outline: 2px solid var(--brass-light);
   outline-offset: 3px;
+}
+
+/* ---------------------------------------------------------
+   iOS / Android normalization — this section doesn't change
+   how anything looks; it removes the usual mobile-browser
+   inconsistencies so the storefront behaves the same in
+   Safari on iOS and Chrome/WebView on Android:
+   - no blue/grey tap-highlight flash on buttons and cards
+   - no 300ms double-tap-to-zoom delay on tap targets
+   - the search input no longer auto-zooms the page on focus
+     (iOS Safari does this to any text input under 16px)
+   - native iOS/Android form-control chrome is reset so
+     inputs/buttons render identically to how they're styled
+   - momentum ("inertia") scrolling inside the cart drawer and
+     product modal, and their scroll bounce is contained so it
+     doesn't chain out to the page behind them
+   - safe-area padding so content clears the notch / Dynamic
+     Island / home-indicator / punch-hole camera on modern
+     phones (only takes effect once the page's <meta
+     name="viewport"> includes viewport-fit=cover)
+   --------------------------------------------------------- */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.capstore-app,
+.capstore-app * {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.capstore-app button,
+.capstore-logo {
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.capstore-app input {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
+}
+
+.product-modal,
+.cart-items {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+.cart-overlay,
+.product-modal-overlay {
+  overscroll-behavior: contain;
+}
+
+@supports (padding: max(0px)) {
+  .capstore-topbar {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+
+  .capstore-header {
+    padding-left: max(var(--gutter), env(safe-area-inset-left));
+    padding-right: max(var(--gutter), env(safe-area-inset-right));
+  }
+
+  .cart-drawer {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .cart-footer {
+    padding-bottom: max(26px, calc(env(safe-area-inset-bottom) + 12px));
+  }
+
+  .capstore-footer {
+    padding-bottom: max(40px, calc(env(safe-area-inset-bottom) + 16px));
+  }
 }
 
 /* Stitched divider — the signature motif, kept as topstitch
@@ -425,7 +508,9 @@
   border: none;
   color: var(--bone);
   font-family: var(--font-body);
-  font-size: 15px;
+  /* 16px (not 15px) stops iOS Safari from auto-zooming the whole
+     page when this input is focused — anything smaller triggers it. */
+  font-size: 16px;
   outline: none;
 }
 
@@ -604,6 +689,7 @@
   border: var(--edge);
   border-radius: var(--radius-sm);
   backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   box-shadow: var(--shadow-sm);
 }
 
@@ -807,11 +893,20 @@
   max-width: 340px;
 }
 
+/* ---------------------------------------------------------
+   Product grid — was fixed at repeat(3, 1fr), which meant
+   each card scaled up to fill 1/3 of a 1240px container
+   (~380px cards, ~380px tall images). Switched to a
+   self-filling grid with a sane per-card ceiling so cards
+   stay a normal e-commerce size no matter how few products
+   are in a row, and simply add more columns on wide screens
+   instead of stretching existing cards bigger.
+   --------------------------------------------------------- */
 .products-grid,
 .shop-products {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 22px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 18px;
 }
 
 /* =========================================================
@@ -826,6 +921,9 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  max-width: 280px;
+  margin: 0 auto;
+  width: 100%;
   transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
   box-shadow: var(--shadow-sm);
 }
@@ -924,10 +1022,10 @@
 }
 
 .product-info {
-  padding: 16px 18px 18px;
+  padding: 14px 15px 15px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   border-top: var(--edge);
 }
 
@@ -941,30 +1039,30 @@
 .product-name-row > div span {
   display: block;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 10px;
   letter-spacing: 0.1em;
   color: var(--stone);
   margin-bottom: 3px;
 }
 
 .product-name-row h3 {
-  font-size: 15.5px;
+  font-size: 14px;
   font-weight: 500;
 }
 
 .product-name-row strong {
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 13px;
   color: var(--brass-light);
   white-space: nowrap;
 }
 
 .add-button {
   width: 100%;
-  padding: 11px;
+  padding: 10px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line-strong);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
   color: var(--bone);
@@ -1054,6 +1152,7 @@
   inset: 0;
   background: rgba(4, 4, 5, 0.82);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1111,15 +1210,19 @@
 .modal-image {
   background: var(--ink-soft);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 10px;
   padding: 20px;
   overflow: hidden;
+  height: 460px;
 }
 
 .modal-image img {
+  flex: 1;
+  min-height: 0;
   width: 100%;
-  height: 100%;
   object-fit: cover;
   border-radius: var(--radius-sm);
 }
@@ -1178,6 +1281,7 @@
   inset: 0;
   background: rgba(4, 4, 5, 0.72);
   backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   z-index: 110;
   display: flex;
   justify-content: flex-end;
@@ -1605,11 +1709,6 @@
    ========================================================= */
 
 @media (max-width: 1080px) {
-  .products-grid,
-  .shop-products {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .benefits-section {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1651,6 +1750,7 @@
 
   .modal-image {
     padding: 24px;
+    height: 340px;
   }
 }
 
@@ -1660,7 +1760,15 @@
   }
 
   .products-grid,
-  .shop-products,
+  .shop-products {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+    gap: 12px;
+  }
+
+  .product-card {
+    max-width: none;
+  }
+
   .reasons-grid {
     grid-template-columns: 1fr;
   }
@@ -1691,4 +1799,54 @@
     width: 64px;
     height: 64px;
   }
+}
+
+.product-side-indicator {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  font-family: var(--font-mono);
+  background: rgba(7, 8, 10, 0.78);
+  color: var(--brass-light);
+  border: 1px solid var(--line-strong);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.modal-image-toggle {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  width: 100%;
+}
+
+.modal-image-toggle button {
+  flex: 1;
+  padding: 9px 0;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--bone-dim);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-image-toggle button:hover {
+  border-color: var(--brass);
+  color: var(--brass-light);
+}
+
+.modal-image-toggle button.selected {
+  background: var(--brass-foil);
+  color: #1a1408;
+  border-color: transparent;
+  box-shadow: var(--shadow-brass);
 }

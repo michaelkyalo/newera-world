@@ -131,6 +131,32 @@ function getProductImage(product) {
 }
 
 
+/*
+ * Front/rear pair for a cap. Rear falls back to front (and
+ * vice versa) so cards and the modal always have something
+ * to show even if the admin only uploaded one side.
+ */
+function getProductImages(product) {
+  const front =
+    product?.imgFront ||
+    product?.img ||
+    product?.imgRear ||
+    heroCap;
+
+  const rear =
+    product?.imgRear ||
+    product?.imgFront ||
+    product?.img ||
+    heroCap;
+
+  return {
+    front,
+    rear,
+    hasRear: Boolean(product?.imgRear),
+  };
+}
+
+
 function getCreatedTime(product) {
   const createdAt = product?.createdAt;
 
@@ -172,12 +198,27 @@ export default function StoreFront() {
 
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  /* Quantity picker for the currently open product modal */
+  const [modalQuantity, setModalQuantity] = useState(1);
+
   /* Firebase products */
   const [products, setProducts] = useState([]);
 
   const [loadingProducts, setLoadingProducts] = useState(true);
 
   const [firebaseError, setFirebaseError] = useState("");
+
+
+  /*
+   * Reset the modal quantity picker back to 1 every time a
+   * different product is opened, so it never carries over a
+   * stale quantity from whatever cap was viewed previously.
+   */
+  useEffect(() => {
+
+    setModalQuantity(1);
+
+  }, [selectedProduct]);
 
 
   /* =======================================================
@@ -411,11 +452,25 @@ export default function StoreFront() {
      CART FUNCTIONS
      ======================================================= */
 
-  const addToCart = (product) => {
+  /*
+   * addToCart now accepts an optional quantity (defaults to 1
+   * so every existing call site that only passes a product
+   * still behaves exactly as before). Whatever quantity is
+   * passed in is clamped to available stock, whether the item
+   * is brand new to the cart or already sitting in it.
+   */
+  const addToCart = (product, qty = 1) => {
 
-    if (Number(product.stock) <= 0) {
+    const stock = Number(product.stock) || 0;
+
+    if (stock <= 0) {
       return;
-    } 
+    }
+
+    const requestedQty = Math.max(
+      1,
+      Math.floor(Number(qty) || 1)
+    );
 
     setCart((current) => {
 
@@ -431,10 +486,12 @@ export default function StoreFront() {
          * Don't allow cart quantity to exceed stock.
          */
 
-        if (
-          existing.quantity >=
-          Number(product.stock)
-        ) {
+        const newQuantity = Math.min(
+          stock,
+          existing.quantity + requestedQty
+        );
+
+        if (newQuantity === existing.quantity) {
           return current;
         }
 
@@ -442,8 +499,7 @@ export default function StoreFront() {
           item.id === product.id
             ? {
                 ...item,
-                quantity:
-                  item.quantity + 1,
+                quantity: newQuantity,
               }
             : item
         );
@@ -453,7 +509,10 @@ export default function StoreFront() {
         ...current,
         {
           ...product,
-          quantity: 1,
+          quantity: Math.min(
+            stock,
+            requestedQty
+          ),
         },
       ];
 
@@ -520,20 +579,46 @@ export default function StoreFront() {
      WHATSAPP CHECKOUT
      ======================================================= */
 
+  /*
+   * WhatsApp can only pre-fill TEXT into wa.me links - there is
+   * no way to attach an actual photo file this way. What we can
+   * do is drop a direct, hosted (https://) image URL into the
+   * message: WhatsApp auto-generates a photo preview card for a
+   * link like that. Note WhatsApp typically only renders a full
+   * preview card for one link per message (usually the first),
+   * so with multiple items only the first tends to show a real
+   * thumbnail - the rest still show as tappable photo links.
+   *
+   * Base64 data-URL images (inline-saved instead of uploaded to
+   * Storage) can't be previewed by WhatsApp at all, so those are
+   * skipped entirely rather than dumping raw text into the chat.
+   */
   const checkoutWhatsApp = () => {
 
     if (!cart.length) return;
 
+    const isLinkableImage = (src) =>
+      typeof src === "string" &&
+      /^https?:\/\//i.test(src);
+
     const orderLines =
       cart
-        .map(
-          (item) =>
-            `${item.name} (${item.color}) x${item.quantity} - ${money(
-              item.price *
-                item.quantity
-            )}`
-        )
-        .join("\n");
+        .map((item) => {
+
+          const image =
+            getProductImage(item);
+
+          const line = `*${item.name}* (${item.color}) x${item.quantity} - ${money(
+            item.price *
+              item.quantity
+          )}`;
+
+          return isLinkableImage(image)
+            ? `${line}\n📸 ${image}`
+            : line;
+
+        })
+        .join("\n\n");
 
     const message = `Hello CAPSTORE 👋
 
@@ -1073,19 +1158,10 @@ Please let me know about delivery and payment.`;
             </button>
 
 
-            <div className="modal-image">
-
-              <img
-                src={getProductImage(
-                  selectedProduct
-                )}
-                alt={
-                  selectedProduct.name
-                }
-                className="product-cap-image"
-              />
-
-            </div>
+            <ModalImage
+              key={selectedProduct.id}
+              product={selectedProduct}
+            />
 
 
             <div className="modal-details">
@@ -1127,22 +1203,111 @@ Please let me know about delivery and payment.`;
                 selectedProduct.stock
               ) > 0 ? (
 
-                <button
-                  className="primary-blue-button full-button"
-                  onClick={() => {
+                <>
 
-                    addToCart(
-                      selectedProduct
-                    );
+                  <div className="quantity-controls modal-quantity-controls">
 
-                    setSelectedProduct(
-                      null
-                    );
+                    <button
+                      onClick={() =>
+                        setModalQuantity(
+                          (q) =>
+                            Math.max(
+                              1,
+                              q - 1
+                            )
+                        )
+                      }
+                      disabled={
+                        modalQuantity <= 1
+                      }
+                      style={
+                        modalQuantity <= 1
+                          ? {
+                              opacity: 0.35,
+                              cursor: "not-allowed",
+                            }
+                          : undefined
+                      }
+                    >
+                      −
+                    </button>
 
-                  }}
-                >
-                  Add To Bag →
-                </button>
+
+                    <b>
+                      {modalQuantity}
+                    </b>
+
+
+                    <button
+                      onClick={() =>
+                        setModalQuantity(
+                          (q) =>
+                            Math.min(
+                              Number(
+                                selectedProduct.stock
+                              ),
+                              q + 1
+                            )
+                        )
+                      }
+                      disabled={
+                        modalQuantity >=
+                        Number(selectedProduct.stock)
+                      }
+                      style={
+                        modalQuantity >=
+                        Number(selectedProduct.stock)
+                          ? {
+                              opacity: 0.35,
+                              cursor: "not-allowed",
+                            }
+                          : undefined
+                      }
+                    >
+                      +
+                    </button>
+
+                  </div>
+
+
+                  {modalQuantity >=
+                    Number(selectedProduct.stock) && (
+
+                    <small
+                      style={{
+                        display: "block",
+                        marginTop: "-8px",
+                        marginBottom: "12px",
+                        color: "#ff7070",
+                        fontSize: "10px",
+                      }}
+                    >
+                      Max stock reached (
+                      {selectedProduct.stock} available)
+                    </small>
+
+                  )}
+
+
+                  <button
+                    className="primary-blue-button full-button"
+                    onClick={() => {
+
+                      addToCart(
+                        selectedProduct,
+                        modalQuantity
+                      );
+
+                      setSelectedProduct(
+                        null
+                      );
+
+                    }}
+                  >
+                    Add To Bag →
+                  </button>
+
+                </>
 
               ) : (
 
@@ -1314,6 +1479,17 @@ Please let me know about delivery and payment.`;
                                 -1
                               )
                             }
+                            disabled={
+                              item.quantity <= 1
+                            }
+                            style={
+                              item.quantity <= 1
+                                ? {
+                                    opacity: 0.35,
+                                    cursor: "not-allowed",
+                                  }
+                                : undefined
+                            }
                           >
                             −
                           </button>
@@ -1331,11 +1507,42 @@ Please let me know about delivery and payment.`;
                                 1
                               )
                             }
+                            disabled={
+                              item.quantity >=
+                              (Number(item.stock) || 0)
+                            }
+                            style={
+                              item.quantity >=
+                              (Number(item.stock) || 0)
+                                ? {
+                                    opacity: 0.35,
+                                    cursor: "not-allowed",
+                                  }
+                                : undefined
+                            }
                           >
                             +
                           </button>
 
                         </div>
+
+
+                        {item.quantity >=
+                          (Number(item.stock) || 0) && (
+
+                          <small
+                            style={{
+                              display: "block",
+                              marginTop: "4px",
+                              color: "#ff7070",
+                              fontSize: "10px",
+                            }}
+                          >
+                            Max stock reached
+                            ({item.stock} available)
+                          </small>
+
+                        )}
 
                       </div>
 
@@ -1876,8 +2083,11 @@ function ProductCard({
   setSelectedProduct,
 }) {
 
-  const image =
-    getProductImage(product);
+  const { front, rear, hasRear } =
+    getProductImages(product);
+
+  const [showRear, setShowRear] =
+    useState(false);
 
   const outOfStock =
     Number(product.stock) <= 0;
@@ -1892,6 +2102,12 @@ function ProductCard({
         onClick={() =>
           setSelectedProduct(product)
         }
+        onMouseEnter={() =>
+          hasRear && setShowRear(true)
+        }
+        onMouseLeave={() =>
+          setShowRear(false)
+        }
       >
 
         <div className="product-badge">
@@ -1900,10 +2116,27 @@ function ProductCard({
 
 
         <img
-          src={image}
-          alt={product.name}
+          src={
+            showRear ? rear : front
+          }
+          alt={
+            showRear
+              ? `${product.name} (rear view)`
+              : product.name
+          }
           className="product-cap-image"
         />
+
+
+        {hasRear && (
+
+          <span className="product-side-indicator">
+            {showRear
+              ? "BACK"
+              : "FRONT"}
+          </span>
+
+        )}
 
 
         {outOfStock && (
@@ -1996,6 +2229,93 @@ function ProductCard({
       </div>
 
     </article>
+
+  );
+}
+
+
+/* =========================================================
+   MODAL IMAGE (front / rear toggle)
+   ========================================================= */
+
+function ModalImage({ product }) {
+
+  const { front, rear, hasRear } =
+    getProductImages(product);
+
+  const [activeSide, setActiveSide] =
+    useState("front");
+
+  const mainImage =
+    activeSide === "rear"
+      ? rear
+      : front;
+
+
+  return (
+
+    <div className="modal-image">
+
+      <img
+        src={mainImage}
+        alt={
+          activeSide === "rear"
+            ? `${product.name} (rear view)`
+            : `${product.name} (front view)`
+        }
+        className="product-cap-image"
+        onClick={() =>
+          hasRear &&
+          setActiveSide((side) =>
+            side === "front"
+              ? "rear"
+              : "front"
+          )
+        }
+        style={
+          hasRear
+            ? { cursor: "pointer" }
+            : undefined
+        }
+      />
+
+
+      {hasRear && (
+
+        <div className="modal-image-toggle">
+
+          <button
+            className={
+              activeSide === "front"
+                ? "selected"
+                : ""
+            }
+            onClick={() =>
+              setActiveSide("front")
+            }
+          >
+            Front
+          </button>
+
+
+          <button
+            className={
+              activeSide === "rear"
+                ? "selected"
+                : ""
+            }
+            onClick={() =>
+              setActiveSide("rear")
+            }
+          >
+            Back
+          </button>
+
+        </div>
+
+      )}
+
+    </div>
 
   );
 }
